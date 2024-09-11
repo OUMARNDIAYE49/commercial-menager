@@ -1,11 +1,10 @@
 const pool = require("./db");
 
-// Fonction de validation des données du produit
-function validateProductData(name, description, price, stock, category, barcode, status) {
-  const alphaRegex = /^[A-Za-z\s]+$/; // Regex pour valider que le champ contient uniquement des lettres et des espaces
-  const numericRegex = /^[0-9]+$/; // Regex pour valider que le champ contient uniquement des chiffres
 
-  // Validation des champs alphabétiques
+function validateProductData(name, description, price, stock, category, barcode, status) {
+  const alphaRegex = /^[A-Za-z\s]+$/; 
+  const numericRegex = /^[0-9]+$/;
+
   if (!alphaRegex.test(description)) {
     throw new Error("La description du produit est invalide.");
   }
@@ -16,7 +15,7 @@ function validateProductData(name, description, price, stock, category, barcode,
     throw new Error("Le statut du produit est invalide.");
   }
 
-  // Validation des champs numériques
+ 
   if (!numericRegex.test(price)) {
     throw new Error("Le prix du produit est invalide.");
   }
@@ -28,7 +27,7 @@ function validateProductData(name, description, price, stock, category, barcode,
   }
 }
 
-// Fonction pour récupérer tous les produits
+
 async function getProducts() {
   const connection = await pool.getConnection();
   try {
@@ -42,10 +41,9 @@ async function getProducts() {
   }
 }
 
-// Fonction pour ajouter un produit
-async function addProduct(name, description, price, stock, category, barcode, status) {
-  validateProductData(name, description, price, stock, category, barcode, status); // Appel à la fonction de validation
 
+async function addProduct(name, description, price, stock, category, barcode, status) {
+  validateProductData(name, description, price, stock, category, barcode, status); 
   const connection = await pool.getConnection();
   try {
     const query = "INSERT INTO Products (name, description, price, stock, category, barcode, status) VALUES (?, ?, ?, ?, ?, ?, ?)";
@@ -59,13 +57,12 @@ async function addProduct(name, description, price, stock, category, barcode, st
   }
 }
 
-// Fonction pour mettre à jour un produit
-async function updateProduct(id, name, description, price, stock, category, barcode, status) {
-  validateProductData(name, description, price, stock, category, barcode, status); // Appel à la fonction de validation
 
+async function updateProduct(id, name, description, price, stock, category, barcode, status) {
+  validateProductData(name, description, price, stock, category, barcode, status); 
   const connection = await pool.getConnection();
   try {
-    // Vérifier si le produit existe
+    
     const [existingProduct] = await connection.execute("SELECT * FROM Products WHERE id = ?", [id]);
 
     if (existingProduct.length === 0) {
@@ -83,7 +80,7 @@ async function updateProduct(id, name, description, price, stock, category, barc
   }
 }
 
-// Fonction pour supprimer un produit
+
 async function deleteProduct(id) {
   if (!/^[0-9]+$/.test(id)) {
     throw new Error("L'ID du produit doit être un chiffre.");
@@ -91,7 +88,7 @@ async function deleteProduct(id) {
 
   const connection = await pool.getConnection();
   try {
-    // Vérifier si le produit existe
+   
     const [existingProduct] = await connection.execute("SELECT * FROM Products WHERE id = ?", [id]);
 
     if (existingProduct.length === 0) {
@@ -109,7 +106,6 @@ async function deleteProduct(id) {
   }
 }
 
-// Fonction pour récupérer un produit par ID
 async function getProductById(id) {
   if (!/^[0-9]+$/.test(id)) {
     throw new Error("L'ID du produit doit être un chiffre.");
@@ -130,7 +126,6 @@ async function getProductById(id) {
   }
 }
 
-// Exportation des fonctions pour être utilisées dans d'autres fichiers
 module.exports = {
   getProducts,
   addProduct,

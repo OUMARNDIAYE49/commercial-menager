@@ -29,7 +29,7 @@ const mainMenu = () => {
         productMenu();
         break;
       case "4":
-        mainMenus();
+        orderMenu(); 
         break;
       case "5":
         console.log("Au revoir !");
@@ -43,7 +43,7 @@ const mainMenu = () => {
   });
 };
 
-// Fonction pour afficher le menu des clients
+
 const customerMenu = () => {
   console.log("\n=== Menu Clients ===");
   console.log("1. Voir tous les clients");
@@ -103,7 +103,7 @@ const customerMenu = () => {
               await customerModule.deleteCustomer(id);
               console.log("Client supprimé avec succès.");
             } catch (error) {
-              console.error("Imposible de supprimé ce client");
+              console.error("Impossible de supprimer ce client :", error.message);
             }
             customerMenu();
           });
@@ -225,7 +225,6 @@ const paymentMenu = () => {
   });
 };
 
-
 // Fonction pour afficher le menu des produits
 const productMenu = () => {
   console.log("\n=== Menu Produits ===");
@@ -330,15 +329,18 @@ const productMenu = () => {
 };
 
 
-// Fonction principale du menu
-const mainMenus = () => {
-  console.log("\n=== Menu Commande ===");
-  console.log("1 : Voir les commandes");
-  console.log("2 : Ajouter une commande");
-  console.log("3 : Mettre à jour une commande");
-  console.log("4 : Supprimer une commande");
-  console.log("5 : Retour au menu principal");
-  console.log("6 : Quitter");
+let tempOrderDetails = [];
+let newOrder = null;
+
+// Fonction principale du menu des commandes
+const orderMenu = () => {
+  console.log("\n=== Menu Commandes ===");
+  console.log("1. Voir les commandes");
+  console.log("2. Ajouter une commande");
+  console.log("3. Mettre à jour une commande");
+  console.log("4. Supprimer une commande");
+  console.log("5. Retour au menu principal");
+  console.log("6. Quitter");
 
   rl.question("Choisissez une option : ", (option) => {
     switch (option) {
@@ -363,25 +365,32 @@ const mainMenus = () => {
         break;
       default:
         console.log("Option invalide, veuillez réessayer.");
-        mainMenus();
+        orderMenu();
         break;
     }
   });
 };
 
-// Afficher toutes les commandes
 const voirCommandes = async () => {
   try {
     const orders = await orderModule.getPurchaseOrders();
+    
+    if (!orders || orders.length === 0) {
+      console.log("Aucune commande disponible à afficher.");
+      orderMenu();
+      return;
+    }
+
     orders.forEach(order => {
-      console.log(`Commande ID: ${order._id}`);
+      console.log(`Commande ID: ${order.id}`);
       console.log(`Date: ${order.date}`);
       console.log(`Adresse de livraison: ${order.delivery_address}`);
       console.log(`Numéro de suivi: ${order.track_number}`);
       console.log(`Statut: ${order.status}`);
       console.log(`Client ID: ${order.customer_id}`);
       console.log("\nDétails de la commande :");
-      if (order.details.length > 0) {
+
+      if (order.details && order.details.length > 0) {
         order.details.forEach(detail => {
           console.log(`  Produit ID: ${detail.product_id}`);
           console.log(`  Quantité: ${detail.quantity}`);
@@ -396,14 +405,10 @@ const voirCommandes = async () => {
   } catch (error) {
     console.error("Erreur lors de l'affichage des commandes :", error.message);
   }
-  mainMenus();
+  orderMenu();
 };
 
-// Variables pour stocker la commande et ses détails
-let tempOrderDetails = [];
-let newOrder = null;
 
-// Ajouter une nouvelle commande
 const ajouterCommande = async () => {
   console.log("\n=== Ajouter une commande ===");
   rl.question("Date (YYYY-MM-DD) : ", (date) => {
@@ -411,25 +416,23 @@ const ajouterCommande = async () => {
       rl.question("Numéro de suivi : ", (track_number) => {
         rl.question("Statut : ", (status) => {
           rl.question("ID du client : ", (customer_id) => {
-            // Validation des entrées pour s'assurer qu'elles ne sont pas undefined ou vides
             if (!date || !delivery_address || !track_number || !status || !customer_id) {
               console.error("Erreur : Toutes les entrées sont obligatoires.");
-              mainMenus();
+              orderMenu();
               return;
             }
 
-            // Créer un nouvel objet commande sans encore l'enregistrer
             newOrder = {
               date,
               delivery_address,
               track_number,
               status,
               customer_id,
-              details: tempOrderDetails, // Ajouter les détails des produits
+              details: tempOrderDetails,
             };
 
             console.log("Commande initialisée. Veuillez ajouter des détails de commande.");
-            ajouterDetailsCommandeMenu(); // Rediriger vers le sous-menu pour ajouter des produits
+            ajouterDetailsCommandeMenu();
           });
         });
       });
@@ -437,7 +440,7 @@ const ajouterCommande = async () => {
   });
 };
 
-// Sous-menu pour ajouter des détails de commande
+
 const ajouterDetailsCommandeMenu = () => {
   console.log("\n=== Ajouter détails de commande ===");
   console.log("1 : Ajouter un produit");
@@ -453,7 +456,7 @@ const ajouterDetailsCommandeMenu = () => {
         enregistrerCommande();
         break;
       case "3":
-        mainMenus();
+        orderMenu();
         break;
       default:
         console.log("Option invalide, veuillez réessayer.");
@@ -463,32 +466,30 @@ const ajouterDetailsCommandeMenu = () => {
   });
 };
 
-// Ajouter les détails d'un produit à la commande
+
 const ajouterProduit = () => {
   rl.question("ID du produit : ", (product_id) => {
     rl.question("Quantité : ", (quantity) => {
       rl.question("Prix : ", (price) => {
-        // Validation pour s'assurer que tous les champs sont remplis
         if (!product_id || !quantity || !price) {
           console.error("Erreur : Toutes les entrées de produit sont obligatoires.");
           ajouterDetailsCommandeMenu();
           return;
         }
 
-        // Ajouter le produit temporairement à la commande en cours
         tempOrderDetails.push({
           product_id,
           quantity,
           price
         });
         console.log(`Produit ajouté : ID ${product_id}, Quantité ${quantity}, Prix ${price}`);
-        ajouterDetailsCommandeMenu(); // Retour au sous-menu pour permettre d'ajouter plus de produits ou sauvegarder
+        ajouterDetailsCommandeMenu();
       });
     });
   });
 };
 
-// Enregistrer la commande avec les détails ajoutés
+
 const enregistrerCommande = async () => {
   try {
     if (!newOrder || !newOrder.details || newOrder.details.length === 0) {
@@ -497,12 +498,11 @@ const enregistrerCommande = async () => {
       return;
     }
 
-    // Ajouter la nouvelle commande
     await orderModule.addPurchaseOrder(newOrder);
-    tempOrderDetails = []; // Réinitialiser la liste des détails après enregistrement
-    newOrder = null; // Réinitialiser la commande après enregistrement
+    tempOrderDetails = [];
+    newOrder = null;
     console.log("Commande enregistrée avec succès.");
-    mainMenus();
+    orderMenu();
   } catch (error) {
     console.error("Erreur lors de l'enregistrement de la commande :", error.message);
     ajouterDetailsCommandeMenu();
@@ -510,19 +510,29 @@ const enregistrerCommande = async () => {
 };
 
 
-
-  
-// Fonction pour mettre à jour une commande
 const miseAJourCommande = () => {
   rl.question("ID de la commande à mettre à jour : ", async (id) => {
-    
-    // Logique pour mettre à jour la commande
-    console.log(`Commande ${id} mise à jour.`);
-    mainMenus();
+    try {
+      const order = await orderModule.getPurchaseOrderById(id);
+      if (!order) {
+        console.error("Commande non trouvée.");
+        orderMenu();
+        return;
+      }
+
+      console.log("Détails de la commande à mettre à jour :");
+      console.table([order]);
+
+
+      console.log("Commande mise à jour avec succès.");
+    } catch (error) {
+      console.error("Erreur lors de la mise à jour de la commande :", error.message);
+    }
+    orderMenu();
   });
 };
 
-// Fonction pour supprimer une commande
+
 const supprimerCommande = () => {
   rl.question("ID de la commande à supprimer : ", async (id) => {
     try {
@@ -531,11 +541,9 @@ const supprimerCommande = () => {
     } catch (error) {
       console.error("Erreur lors de la suppression de la commande :", error.message);
     }
-    mainMenus();
+    orderMenu();
   });
 };
-
-  
 
 console.log("Bienvenue dans l'application de gestion des données.");
 mainMenu();
