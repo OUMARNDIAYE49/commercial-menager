@@ -43,13 +43,15 @@ const mainMenu = () => {
   });
 };
 
+// Fonction pour afficher le menu des clients
 const customerMenu = () => {
   console.log("\n=== Menu Clients ===");
   console.log("1. Voir tous les clients");
   console.log("2. Ajouter un client");
   console.log("3. Mettre à jour un client");
   console.log("4. Supprimer un client");
-  console.log("5. Retour au menu principal");
+  console.log("5. Voir un client par ID");
+  console.log("6. Retour au menu principal");
 
   rl.question("Choisissez une option : ", async (option) => {
     try {
@@ -101,12 +103,23 @@ const customerMenu = () => {
               await customerModule.deleteCustomer(id);
               console.log("Client supprimé avec succès.");
             } catch (error) {
-              console.error("Erreur lors de la suppression du client :", error.message);
+              console.error("Imposible de supprimé ce client");
             }
             customerMenu();
           });
           break;
         case "5":
+          rl.question("ID du client à voir : ", async (id) => {
+            try {
+              const customer = await customerModule.getCustomerById(id);
+              console.table([customer]);
+            } catch (error) {
+              console.error("Erreur lors de la récupération du client :", error.message);
+            }
+            customerMenu();
+          });
+          break;
+        case "6":
           mainMenu();
           break;
         default:
@@ -121,15 +134,15 @@ const customerMenu = () => {
   });
 };
 
-
-// Voici un exemple de menu pour les paiements
+// Fonction pour afficher le menu des paiements
 const paymentMenu = () => {
   console.log("\n=== Menu Paiements ===");
   console.log("1. Voir tous les paiements");
   console.log("2. Ajouter un paiement");
   console.log("3. Mettre à jour un paiement");
   console.log("4. Supprimer un paiement");
-  console.log("5. Retour au menu principal");
+  console.log("5. Voir un paiement par ID");
+  console.log("6. Retour au menu principal");
 
   rl.question("Choisissez une option : ", async (option) => {
     try {
@@ -187,6 +200,17 @@ const paymentMenu = () => {
           });
           break;
         case "5":
+          rl.question("ID du paiement à voir : ", async (id) => {
+            try {
+              const payment = await paymentModule.getPaymentById(id);
+              console.table([payment]);
+            } catch (error) {
+              console.error("Erreur lors de la récupération du paiement :", error.message);
+            }
+            paymentMenu();
+          });
+          break;
+        case "6":
           mainMenu();
           break;
         default:
@@ -201,13 +225,16 @@ const paymentMenu = () => {
   });
 };
 
+
+// Fonction pour afficher le menu des produits
 const productMenu = () => {
   console.log("\n=== Menu Produits ===");
   console.log("1. Voir tous les produits");
   console.log("2. Ajouter un produit");
   console.log("3. Mettre à jour un produit");
   console.log("4. Supprimer un produit");
-  console.log("5. Retour au menu principal");
+  console.log("5. Voir un produit par ID");
+  console.log("6. Retour au menu principal");
 
   rl.question("Choisissez une option : ", async (option) => {
     try {
@@ -277,6 +304,17 @@ const productMenu = () => {
           });
           break;
         case "5":
+          rl.question("ID du produit à voir : ", async (id) => {
+            try {
+              const product = await productModule.getProductById(id);
+              console.table([product]);
+            } catch (error) {
+              console.error("Erreur lors de la récupération du produit :", error.message);
+            }
+            productMenu();
+          });
+          break;
+        case "6":
           mainMenu();
           break;
         default:
@@ -290,6 +328,7 @@ const productMenu = () => {
     }
   });
 };
+
 
 // Fonction principale du menu
 const mainMenus = () => {

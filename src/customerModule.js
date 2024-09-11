@@ -31,6 +31,22 @@ async function getCustomers() {
   }
 }
 
+async function getCustomerById(id) {
+  const connection = await pool.getConnection();
+  try {
+    const [rows] = await connection.execute("SELECT * FROM Customers WHERE id = ?", [id]);
+    if (rows.length === 0) {
+      throw new Error("Le client n'existe pas.");
+    }
+    return rows[0];
+  } catch (error) {
+    console.error("Erreur lors de la récupération du client :", error.message);
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
 async function addCustomer(name, email, phone, address) {
   const connection = await pool.getConnection();
   try {
@@ -72,7 +88,6 @@ async function updateCustomer(id, name, email, phone, address) {
   }
 }
 
-
 async function deleteCustomer(id) {
   const connection = await pool.getConnection();
   try {
@@ -88,7 +103,7 @@ async function deleteCustomer(id) {
     const [result] = await connection.execute(query, [id]);
     return result;
   } catch (error) {
-    console.error("Erreur lors de la suppression du client :", error.message);
+    console.error("");
     throw error;
   } finally {
     connection.release();
@@ -97,6 +112,7 @@ async function deleteCustomer(id) {
 
 module.exports = {
   getCustomers,
+  getCustomerById,
   addCustomer,
   updateCustomer,
   deleteCustomer
