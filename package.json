@@ -1,0 +1,16 @@
+{
+  "name": "comercial-menager",
+  "version": "1.0.0",
+  "main": "db.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "mysql2": "^3.11.0",
+    "readline-sync": "^1.4.10"
+  }
+}
