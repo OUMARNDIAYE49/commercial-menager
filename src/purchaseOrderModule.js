@@ -69,7 +69,6 @@ async function addPurchaseOrder(order) {
     return orderId;
   } catch (error) {
     await connection.rollback();
-    console.error("Erreur lors de l'ajout de la commande :", error.message);
     throw new Error(`Erreur lors de l'ajout de la commande : ${error.message}`);
   } finally {
     connection.release();
@@ -113,7 +112,7 @@ async function updatePurchaseOrder(id, updates) {
 
     return result;
   } catch (error) {
-    console.error("Erreur lors de la mise à jour de la commande :", error.message);
+   
     throw new Error(`Erreur lors de la mise à jour de la commande : ${error.message}`);
   } finally {
     connection.release();
@@ -137,8 +136,8 @@ async function deletePurchaseOrder(id) {
 
     return result;
   } catch (error) {
-    console.error("Erreur lors de la suppression de la commande :", error.message);
-    throw new Error(`Erreur lors de la suppression de la commande : ${error.message}`);
+  
+    throw new Error("Commande non trouvée");
   } finally {
     connection.release();
   }
@@ -172,8 +171,8 @@ async function getPurchaseOrderById(id) {
 
     return order;
   } catch (error) {
-    console.error("Erreur lors de la récupération de la commande :", error.message);
-    throw new Error(`Erreur lors de la récupération de la commande : ${error.message}`);
+  
+    throw new Error("Commande non trouvée.");
   } finally {
     connection.release();
   }
