@@ -96,18 +96,21 @@ const customerMenu = () => {
               });
             });
           });
-          break;
-        case "4":
-          rl.question("ID du client à supprimer : ", async (id) => {
-            try {
-              await customerModule.deleteCustomer(id);
-              console.log("Client supprimé avec succès.");
-            } catch (error) {
-              console.error("Impossible de supprimer ce client :", error.message);
-            }
-            customerMenu();
-          });
-          break;
+          case "4":
+            rl.question("ID du client à supprimer : ", async (id) => {
+              try {
+                const { message } = await customerModule.deleteCustomer(id);
+                console.log(message);
+              } catch (error) {
+                console.error("Erreur lors de la suppression du client : ", error.message);
+              }
+              customerMenu();
+            });
+            break;
+          
+          
+          
+          
         case "5":
           rl.question("ID du client à voir : ", async (id) => {
             try {
@@ -134,7 +137,7 @@ const customerMenu = () => {
   });
 };
 
-// Fonction pour afficher le menu des paiements
+
 const paymentMenu = () => {
   console.log("\n=== Menu Paiements ===");
   console.log("1. Voir tous les paiements");
@@ -152,23 +155,25 @@ const paymentMenu = () => {
           console.table(payments);
           paymentMenu();
           break;
-        case "2":
-          rl.question("ID de la commande : ", (order_id) => {
-            rl.question("Date (YYYY-MM-DD) : ", (date) => {
-              rl.question("Montant : ", (amount) => {
-                rl.question("Méthode de paiement : ", async (payment_method) => {
-                  try {
-                    await paymentModule.addPayment(order_id, date, amount, payment_method);
-                    console.log("Paiement ajouté avec succès.");
-                  } catch (error) {
-                    console.error("Erreur lors de l'ajout du paiement :", error.message);
-                  }
-                  paymentMenu();
+          case "2":
+            rl.question("ID de la commande : ", (order_id) => {
+              rl.question("Date (YYYY-MM-DD) : ", (date) => {
+                rl.question("Montant : ", (amount) => {
+                  rl.question("Méthode de paiement : ", async (payment_method) => {
+                    try {
+                      await paymentModule.addPayment(order_id, date, amount, payment_method);
+                      console.log("Paiement ajouté avec succès.");
+                    } catch (error) {
+                      // Afficher le message d'erreur sans duplication
+                      console.error("Erreur lors de l'ajout du paiement : " + error.message);
+                    }
+                    paymentMenu();
+                  });
                 });
               });
             });
-          });
-          break;
+            break;
+          
         case "3":
           rl.question("ID du paiement à mettre à jour : ", (id) => {
             rl.question("ID de la commande : ", (order_id) => {
@@ -225,7 +230,6 @@ const paymentMenu = () => {
   });
 };
 
-// Fonction pour afficher le menu des produits
 const productMenu = () => {
   console.log("\n=== Menu Produits ===");
   console.log("1. Voir tous les produits");
@@ -243,29 +247,30 @@ const productMenu = () => {
           console.table(products);
           productMenu();
           break;
-        case "2":
-          rl.question("Nom : ", (name) => {
-            rl.question("Description : ", (description) => {
-              rl.question("Prix : ", (price) => {
-                rl.question("Stock : ", (stock) => {
-                  rl.question("Catégorie : ", (category) => {
-                    rl.question("Code-barres : ", (barcode) => {
-                      rl.question("Statut : ", async (status) => {
-                        try {
-                          await productModule.addProduct(name, description, price, stock, category, barcode, status);
-                          console.log("Produit ajouté avec succès.");
-                        } catch (error) {
-                          console.error("Erreur lors de l'ajout du produit :", error.message);
-                        }
-                        productMenu();
+          case "2":
+            rl.question("Nom : ", (name) => {
+              rl.question("Description : ", (description) => {
+                rl.question("Prix : ", (price) => {
+                  rl.question("Stock : ", (stock) => {
+                    rl.question("Catégorie : ", (category) => {
+                      rl.question("Code-barres : ", (barcode) => {
+                        rl.question("Statut : ", async (status) => {
+                          try {
+                            await productModule.addProduct(name, description, price, stock, category, barcode, status);
+                            console.log("Produit ajouté avec succès.");
+                          } catch (error) {
+                            console.error("Erreur lors de l'ajout du produit :", error.message);
+                          }
+                          productMenu();
+                        });
                       });
                     });
                   });
                 });
               });
             });
-          });
-          break;
+            break;
+          
         case "3":
           rl.question("ID du produit à mettre à jour : ", (id) => {
             rl.question("Nom : ", (name) => {
@@ -279,7 +284,7 @@ const productMenu = () => {
                             await productModule.updateProduct(id, name, description, price, stock, category, barcode, status);
                             console.log("Produit mis à jour avec succès.");
                           } catch (error) {
-                            console.error("");
+                            console.error("Erreur lors de mis à jour du produit: le produit n'existe pas");
                           }
                           productMenu();
                         });
@@ -291,17 +296,19 @@ const productMenu = () => {
             });
           });
           break;
-        case "4":
-          rl.question("ID du produit à supprimer : ", async (id) => {
-            try {
-              await productModule.deleteProduct(id);
-              console.log("Produit supprimé avec succès.");
-            } catch (error) {
-              console.error("");
-            }
-            productMenu();
-          });
-          break;
+          case "4":
+            rl.question("ID du produit à supprimer : ", async (id) => {
+              try {
+                const { message } = await productModule.deleteProduct(id);
+                console.log(message);
+              } catch (error) {
+                console.error("Erreur lors de la suppression du produit : ", error.message);
+              }
+              productMenu();
+            });
+            break;
+          
+          
         case "5":
           rl.question("ID du produit à voir : ", async (id) => {
             try {
@@ -331,7 +338,6 @@ const productMenu = () => {
 let tempOrderDetails = [];
 let newOrder = null;
 
-// Fonction principale du menu des commandes
 const orderMenu = () => {
   console.log("\n=== Menu Commandes ===");
   console.log("1. Voir toutes les commandes");
@@ -481,8 +487,8 @@ const ajouterCommande = async () => {
 
 
 const ajouterDetailsCommandeMenu = () => {
-  console.log("\n=== Ajouter détails de commande ===");
-  console.log("1 : Ajouter un produit");
+  console.log("\n=== Détails de commande ===");
+  console.log("1 : Ajouter details commande");
   console.log("2 : Sauvegarder la commande");
   console.log("3 : Retour au menu");
 
@@ -528,7 +534,6 @@ const ajouterProduit = () => {
   });
 };
 
-
 const enregistrerCommande = async () => {
   try {
     if (!newOrder || !newOrder.details || newOrder.details.length === 0) {
@@ -537,16 +542,31 @@ const enregistrerCommande = async () => {
       return;
     }
 
+  
     await orderModule.addPurchaseOrder(newOrder);
+
     tempOrderDetails = [];
     newOrder = null;
+
     console.log("Commande enregistrée avec succès.");
     orderMenu();
+
   } catch (error) {
-    console.error(" le client n'existe pas");
+    if (error.message === "Le client avec cet ID n'existe pas.") {
+      console.error("Erreur : Le client avec cet ID n'existe pas.");
+    } else if (error.message === "Le produit avec cet ID n'existe pas.") {
+      console.error("Erreur : Le produit avec cet ID n'existe pas.");
+    } else if (error.message.includes("foreign key constraint fails")) {
+      console.error("Erreur : La commande ne peut pas être enregistrée car le produit ou le client référencé n'existe pas.");
+    } else {
+      console.error("", error.message);
+    }
+
     ajouterDetailsCommandeMenu();
   }
 };
+
+
 
 const miseAJourCommande = () => {
   rl.question("ID de la commande à mettre à jour : ", async (id) => {
@@ -629,7 +649,7 @@ const miseAJourCommande = () => {
                   status: newStatus || order.status,
                   customer_id: newCustomerId || order.customer_id,
                   details: updatedDetails 
-                };ts
+                };
                 modifierDetails();
 
               });

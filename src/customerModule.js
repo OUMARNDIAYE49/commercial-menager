@@ -1,10 +1,9 @@
-const pool = require("./db");
-
+const pool = require("./config/db");
 
 function validateCustomerData(name, email, phone) {
   const nameRegex = /^[A-Za-z\s]+$/;
   const emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
-  const phoneRegex = /^[0-9]{1,8}$/; 
+  const phoneRegex = /^[0-9]{1,8}$/;
 
   if (!nameRegex.test(name)) {
     throw new Error("Le nom invalide.");
@@ -32,7 +31,10 @@ async function getCustomers() {
 async function getCustomerById(id) {
   const connection = await pool.getConnection();
   try {
-    const [rows] = await connection.execute("SELECT * FROM Customers WHERE id = ?", [id]);
+    const [rows] = await connection.execute(
+      "SELECT * FROM Customers WHERE id = ?",
+      [id]
+    );
     if (rows.length === 0) {
       throw new Error("Le client n'existe pas.");
     }
@@ -48,11 +50,17 @@ async function addCustomer(name, email, phone, address) {
   const connection = await pool.getConnection();
   try {
     validateCustomerData(name, email, phone);
-    const query = "INSERT INTO Customers (name, email, phone, address) VALUES (?, ?, ?, ?)";
-    const [result] = await connection.execute(query, [name, email, phone, address]);
+    const query =
+      "INSERT INTO Customers (name, email, phone, address) VALUES (?, ?, ?, ?)";
+    const [result] = await connection.execute(query, [
+      name,
+      email,
+      phone,
+      address,
+    ]);
     return result;
   } catch (error) {
-    console.error("Erreur lors de l'ajout d'un client :", error.message);
+    console.error("");
     throw error;
   } finally {
     connection.release();
@@ -62,14 +70,24 @@ async function addCustomer(name, email, phone, address) {
 async function updateCustomer(id, name, email, phone, address) {
   const connection = await pool.getConnection();
   try {
-    const [existingCustomer] = await connection.execute("SELECT * FROM Customers WHERE id = ?", [id]);
+    const [existingCustomer] = await connection.execute(
+      "SELECT * FROM Customers WHERE id = ?",
+      [id]
+    );
     if (existingCustomer.length === 0) {
       throw new Error("Le client n'existe pas.");
     }
     validateCustomerData(name, email, phone);
 
-    const query = "UPDATE Customers SET name = ?, email = ?, phone = ?, address = ? WHERE id = ?";
-    const [result] = await connection.execute(query, [name, email, phone, address, id]);
+    const query =
+      "UPDATE Customers SET name = ?, email = ?, phone = ?, address = ? WHERE id = ?";
+    const [result] = await connection.execute(query, [
+      name,
+      email,
+      phone,
+      address,
+      id,
+    ]);
     return result;
   } catch (error) {
     console.error("Erreur lors de la mise à jour du client :", error.message);
@@ -78,21 +96,31 @@ async function updateCustomer(id, name, email, phone, address) {
     connection.release();
   }
 }
-
 async function deleteCustomer(id) {
   const connection = await pool.getConnection();
   try {
-    const [existingCustomer] = await connection.execute("SELECT * FROM Customers WHERE id = ?", [id]);
+    const [existingCustomer] = await connection.execute(
+      "SELECT * FROM Customers WHERE id = ?",
+      [id]
+    );
 
     if (existingCustomer.length === 0) {
-      throw new Error("Le client n'existe pas.");
+      throw new Error("Le client avec l'ID spécifié n'existe pas.");
     }
-    const query = "DELETE FROM Customers WHERE id = ?";
+    const [referencedCustomer] = await connection.execute(
+      "SELECT * FROM purchase_orders WHERE customer_id = ?",
+      [id]
+    );
+
+    if (referencedCustomer.length > 0) {
+      throw new Error("Impossible de supprimer le client car il est référencé dans des commandes existantes.");
+    }
+  const query = "DELETE FROM Customers WHERE id = ?";
     const [result] = await connection.execute(query, [id]);
-    return result;
+
+    return { message: "Le client a été supprimé avec succès.", result };
   } catch (error) {
-    console.error("");
-    throw error;
+    throw new Error(error.message);
   } finally {
     connection.release();
   }
@@ -103,5 +131,5 @@ module.exports = {
   getCustomerById,
   addCustomer,
   updateCustomer,
-  deleteCustomer
+  deleteCustomer,
 };

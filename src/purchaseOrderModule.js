@@ -1,9 +1,8 @@
-const pool = require("./db");
+const pool = require("./config/db");
 
 async function getPurchaseOrders() {
   const connection = await pool.getConnection();
   try {
-  
     const [orders] = await connection.execute("SELECT * FROM purchase_Orders");
 
     if (!orders || orders.length === 0) {
@@ -12,7 +11,7 @@ async function getPurchaseOrders() {
     }
 
     for (const order of orders) {
-      const orderId = order.id; 
+      const orderId = order.id;
 
       if (!orderId) {
         console.warn(`Commande sans ID trouvée, elle sera ignorée.`);
@@ -24,33 +23,41 @@ async function getPurchaseOrders() {
         [orderId]
       );
 
-  
-      order.details = details || []; 
+      order.details = details || [];
     }
 
     return orders;
   } catch (error) {
-    console.error("Erreur lors de la récupération des commandes :", error.message);
-    throw new Error(`Erreur lors de la récupération des commandes : ${error.message}`);
+    console.error(
+      "Erreur lors de la récupération des commandes :",
+      error.message
+    );
+    throw new Error(
+      `Erreur lors de la récupération des commandes : ${error.message}`
+    );
   } finally {
     connection.release();
   }
 }
 
-
 async function addPurchaseOrder(order) {
   const { date, delivery_address, track_number, status, customer_id, details } = order;
-  
+
   if (!date || !delivery_address || !track_number || !status || !customer_id) {
     throw new Error("Tous les champs de la commande sont requis.");
   }
-
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
-
+    const [existingCustomer] = await connection.execute(
+      "SELECT * FROM Customers WHERE id = ?",
+      [customer_id]
+    );
+    if (existingCustomer.length === 0) {
+      throw new Error("Le client avec cet ID n'existe pas.");
+    }
     const [result] = await connection.execute(
-      "INSERT INTO purchase_Orders (date, delivery_address, track_number, status, customer_id) VALUES (?, ?, ?, ?, ?)",
+      "INSERT INTO purchase_orders (date, delivery_address, track_number, status, customer_id) VALUES (?, ?, ?, ?, ?)",
       [date, delivery_address, track_number, status, customer_id]
     );
     const orderId = result.insertId;
@@ -58,6 +65,13 @@ async function addPurchaseOrder(order) {
     if (details && details.length > 0) {
       for (const detail of details) {
         const { product_id, quantity, price } = detail;
+        const [existingProduct] = await connection.execute(
+          "SELECT * FROM Products WHERE id = ?",
+          [product_id]
+        );
+        if (existingProduct.length === 0) {
+          throw new Error("Le produit avec cet ID n'existe pas.");
+        }
         await connection.execute(
           "INSERT INTO order_details (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)",
           [orderId, product_id, quantity, price]
@@ -69,7 +83,11 @@ async function addPurchaseOrder(order) {
     return orderId;
   } catch (error) {
     await connection.rollback();
-    throw new Error(`Erreur lors de l'ajout de la commande : ${error.message}`);
+    if (error.message.includes("foreign key constraint fails")) {
+      throw new Error("Erreur lors de l'enregistrement de la commande : Le produit ou le client référencé n'existe pas.");
+    } else {
+      throw new Error(`Erreur lors de l'ajout de la commande : ${error.message}`);
+    }
   } finally {
     connection.release();
   }
@@ -82,24 +100,25 @@ async function updatePurchaseOrder(id, updates) {
       throw new Error("L'ID de la commande doit être un chiffre.");
     }
 
-  
-    const query = "UPDATE purchase_Orders SET date = ?, delivery_address = ?, track_number = ?, status = ?, customer_id = ? WHERE id = ?";
+    const query =
+      "UPDATE purchase_Orders SET date = ?, delivery_address = ?, track_number = ?, status = ?, customer_id = ? WHERE id = ?";
     const [result] = await connection.execute(query, [
       updates.date,
       updates.delivery_address,
       updates.track_number,
       updates.status,
       updates.customer_id,
-      id
+      id,
     ]);
 
     if (result.affectedRows === 0) {
       throw new Error("Commande non trouvée.");
     }
 
-  
     if (updates.details && updates.details.length > 0) {
-      await connection.execute("DELETE FROM order_details WHERE order_id = ?", [id]);
+      await connection.execute("DELETE FROM order_details WHERE order_id = ?", [
+        id,
+      ]);
 
       for (const detail of updates.details) {
         const { product_id, quantity, price } = detail;
@@ -112,8 +131,9 @@ async function updatePurchaseOrder(id, updates) {
 
     return result;
   } catch (error) {
-   
-    throw new Error(`Erreur lors de la mise à jour de la commande : ${error.message}`);
+    throw new Error(
+      `Erreur lors de la mise à jour de la commande : ${error.message}`
+    );
   } finally {
     connection.release();
   }
@@ -126,9 +146,14 @@ async function deletePurchaseOrder(id) {
       throw new Error("L'ID de la commande doit être un chiffre.");
     }
 
-    await connection.execute("DELETE FROM order_details WHERE order_id = ?", [id]);
+    await connection.execute("DELETE FROM order_details WHERE order_id = ?", [
+      id,
+    ]);
 
-    const [result] = await connection.execute("DELETE FROM purchase_Orders WHERE id = ?", [id]);
+    const [result] = await connection.execute(
+      "DELETE FROM purchase_Orders WHERE id = ?",
+      [id]
+    );
 
     if (result.affectedRows === 0) {
       throw new Error("Commande non trouvée.");
@@ -136,7 +161,6 @@ async function deletePurchaseOrder(id) {
 
     return result;
   } catch (error) {
-  
     throw new Error("Commande non trouvée");
   } finally {
     connection.release();
@@ -160,18 +184,15 @@ async function getPurchaseOrderById(id) {
 
     const order = orderRows[0];
 
-    
     const [details] = await connection.execute(
       "SELECT * FROM order_details WHERE order_id = ?",
       [id]
     );
 
-    
-    order.details = details || []; 
+    order.details = details || [];
 
     return order;
   } catch (error) {
-  
     throw new Error("Commande non trouvée.");
   } finally {
     connection.release();
@@ -180,9 +201,8 @@ async function getPurchaseOrderById(id) {
 
 module.exports = {
   getPurchaseOrders,
-  getPurchaseOrderById, 
+  getPurchaseOrderById,
   addPurchaseOrder,
   updatePurchaseOrder,
-  deletePurchaseOrder
+  deletePurchaseOrder,
 };
-
