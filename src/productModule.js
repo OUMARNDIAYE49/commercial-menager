@@ -48,6 +48,7 @@ async function getProducts() {
     connection.release();
   }
 }
+
 async function addProduct(
   name,
   description,
@@ -57,7 +58,6 @@ async function addProduct(
   barcode,
   status
 ) {
-
   validateProductData(
     name,
     description,
@@ -76,8 +76,9 @@ async function addProduct(
     );
 
     if (existingProduct.length > 0) {
-      throw new Error(`Un produit avec le barcode ${barcode} existe déjà.`);
+      throw new Error(`Un produit avec le code-barres ${barcode} existe déjà.`);
     }
+
     const query =
       "INSERT INTO Products (name, description, price, stock, category, barcode, status) VALUES (?, ?, ?, ?, ?, ?, ?)";
     const [result] = await connection.execute(query, [
@@ -92,13 +93,12 @@ async function addProduct(
 
     return result;
   } catch (error) {
-    console.error("");
-    throw error;  
+    console.error("Erreur lors de l'ajout du produit :", error.message);
+    throw error;
   } finally {
     connection.release();
   }
 }
-
 
 async function updateProduct(
   id,
@@ -119,6 +119,7 @@ async function updateProduct(
     barcode,
     status
   );
+
   const connection = await pool.getConnection();
   try {
     const [existingProduct] = await connection.execute(
@@ -142,14 +143,16 @@ async function updateProduct(
       status,
       id,
     ]);
+
     return result;
   } catch (error) {
-    console.error("");
+    console.error("Erreur lors de la mise à jour du produit :", error.message);
     throw error;
   } finally {
     connection.release();
   }
 }
+
 async function deleteProduct(id) {
   if (!/^[0-9]+$/.test(id)) {
     throw new Error("L'ID du produit doit être un chiffre.");
@@ -171,13 +174,18 @@ async function deleteProduct(id) {
       [id]
     );
     if (referencedProduct.length > 0) {
-      throw new Error("Impossible de supprimer le produit car il est référencé dans des détails de commande existants.");
+      throw new Error(
+        "Impossible de supprimer le produit car il est référencé dans des détails de commande existants."
+      );
     }
+
     const query = "DELETE FROM Products WHERE id = ?";
     const [result] = await connection.execute(query, [id]);
+
     return { message: "Produit supprimé avec succès.", result };
   } catch (error) {
-    throw new Error(error.message);
+    console.error("Erreur lors de la suppression du produit :", error.message);
+    throw error;
   } finally {
     connection.release();
   }
@@ -187,15 +195,18 @@ async function getProductById(id) {
   if (!/^[0-9]+$/.test(id)) {
     throw new Error("L'ID du produit doit être un chiffre.");
   }
+
   const connection = await pool.getConnection();
   try {
     const [rows] = await connection.execute(
       "SELECT * FROM Products WHERE id = ?",
       [id]
     );
+
     if (rows.length === 0) {
       throw new Error("Le produit n'existe pas.");
     }
+
     return rows[0];
   } catch (error) {
     console.error("Erreur lors de la récupération du produit :", error.message);
@@ -204,6 +215,7 @@ async function getProductById(id) {
     connection.release();
   }
 }
+
 module.exports = {
   getProducts,
   addProduct,
