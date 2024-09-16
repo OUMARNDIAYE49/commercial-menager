@@ -2,8 +2,7 @@
 
 ## Description du Projet
 
-Ce projet est une application Node.js conçue pour gérer les clients, les produits, les commandes et les paiements dans une base de données MySQL. Elle propose des fonctionnalités pour ajouter, afficher, mettre à jour et supprimer ces informations.
-
+Le projet de Gestion des Paiements pour ABC Corporation vise à améliorer le système de gestion des commandes en ajoutant une fonctionnalité de gestion des paiements. Ce projet inclut la mise à jour des modèles de données existants, l'adaptation du schéma de la base de données et le développement d'une application Node.js pour effectuer des opérations CRUD (Create, Read, Update, Delete) sur les données de paiements et de commandes.
 
 ### Prérequis
 
