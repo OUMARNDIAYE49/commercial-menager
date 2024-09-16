@@ -1,8 +1,8 @@
-# Projet  ABC-Corporation
+
 
 ## Description du Projet
 
-Le projet de Gestion des Paiements pour ABC Corporation vise à améliorer le système de gestion des commandes en ajoutant une fonctionnalité de gestion des paiements. Ce projet inclut la mise à jour des modèles de données existants, l'adaptation du schéma de la base de données et le développement d'une application Node.js pour effectuer des opérations CRUD (Create, Read, Update, Delete) sur les données de paiements et de commandes.
+Le projet de Gestion des vente en ligne pour ABC Corporation vise à améliorer le système de gestion des commandes en ajoutant une fonctionnalité de gestion des paiements. Ce projet inclut la mise à jour des modèles de données existants, l'adaptation du schéma de la base de données et le développement d'une application Node.js pour effectuer des opérations CRUD (Create, Read, Update, Delete).
 
 ### Prérequis
 

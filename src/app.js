@@ -19,6 +19,7 @@ const mainMenu = () => {
   console.log("4. Gérer les commandes");
   console.log("5. Quitter");
 
+  
   rl.question("Choisissez une option : ", (option) => {
     switch (option) {
       case "1":
@@ -42,6 +43,7 @@ const mainMenu = () => {
         mainMenu();
         break;
     }
+    
   });
 };
 
@@ -302,6 +304,7 @@ const handleDeletePayment = async () => {
       return handleDeletePayment(); 
     }
     await paymentModule.deletePayment(id);
+    console.log("");
     console.log("Paiement supprimé avec succès.");
   } catch (error) {
     console.error("Erreur : ID de paiement non trouvé");
