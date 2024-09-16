@@ -245,7 +245,6 @@ const paymentMenu = () => {
   });
 };
 
-// Fonction pour gérer l'ajout d'un paiement
 const handleAddPayment = async () => {
   const order_id = await promptForValidInput("ID de la commande : ", /^[0-9]+$/, "L'ID de commande n'existe pas");
   const date = await promptForValidInput("Date (YYYY-MM-DD) : ", /^\d{4}-\d{2}-\d{2}$/, "Format de date invalide. Veuillez utiliser le format YYYY-MM-DD.");
@@ -266,21 +265,8 @@ const handleAddPayment = async () => {
   paymentMenu();
 };
 
-// Fonction pour demander des entrées utilisateur avec validation
-// const promptForValidInput = async (message, validationRegex, errorMessage) => {
-//   let input;
-//   do {
-//     input = await promptUser(message);
-//     if (!validationRegex.test(input)) {
-//       console.error(errorMessage);
-//     }
-//   } while (!validationRegex.test(input));
-//   return input;
-// };
-
-// Fonction pour gérer la mise à jour d'un paiement
 const handleUpdatePayment = async () => {
-  // Récupérer les informations avec validation des entrées utilisateur
+ 
   const id = await promptForValidInput("ID du paiement à mettre à jour : ", /^[0-9]+$/, "L'ID du paiement est obligatoire et doit être un nombre entier.");
   const order_id = await promptForValidInput("ID de la commande : ", /^[0-9]+$/, "L'ID de commande est obligatoire et doit être un nombre entier.");
   const date = await promptForValidInput("Date (YYYY-MM-DD) : ", /^\d{4}-\d{2}-\d{2}$/, "Format de date invalide. Veuillez utiliser le format YYYY-MM-DD.");
@@ -288,29 +274,22 @@ const handleUpdatePayment = async () => {
   const payment_method = await promptForValidInput("Méthode de paiement : ", /^.+$/, "La méthode de paiement est obligatoire et doit être un texte valide.");
 
   try {
-    // Vérifier si le paiement existe
     const existingPayment = await paymentModule.getPaymentById(id);
     if (!existingPayment) {
       console.error("Le paiement avec cet ID n'existe pas.");
-      return handleUpdatePayment(); // Redemander les informations
+      return handleUpdatePayment(); 
     }
-
-    // Vérifier si la commande existe
     const existingOrder = await paymentModule.checkOrderExists(order_id); 
     if (!existingOrder) {
       console.error("La commande avec l'ID spécifié n'existe pas.");
-      return handleUpdatePayment(); // Redemander les informations
+      return handleUpdatePayment();
     }
-
-    // Mise à jour du paiement
     await paymentModule.updatePayment(id, order_id, date, amount, payment_method);
     console.log("Paiement mis à jour avec succès.");
   } catch (error) {
-    // Gestion des erreurs possibles pendant l'exécution
     console.error("Erreur lors de la mise à jour du paiement : ", error.message);
   }
 
-  // Retour au menu de paiement
   paymentMenu();
 };
 

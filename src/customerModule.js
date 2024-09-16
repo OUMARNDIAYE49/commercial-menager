@@ -1,6 +1,5 @@
 const pool = require("./config/db");
 
-// Fonction pour vérifier si l'email existe déjà
 async function doesEmailExist(email) {
   const connection = await pool.getConnection();
   try {
@@ -15,7 +14,6 @@ async function doesEmailExist(email) {
     connection.release();
   }
 }
-// Fonction pour valider les données du client
 function validateCustomerData(name, email, phone) {
   const nameRegex = /^[A-Za-z\s]+$/;
   const emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
@@ -37,8 +35,6 @@ function validateCustomerData(name, email, phone) {
     throw new Error(errors.join(" "));
   }
 }
-
-// Fonction pour vérifier si l'email existe déjà
 async function doesEmailExist(email) {
   const connection = await pool.getConnection();
   try {
@@ -53,8 +49,6 @@ async function doesEmailExist(email) {
     connection.release();
   }
 }
-
-// Fonction pour vérifier si le numéro de téléphone existe déjà
 async function doesPhoneExist(phone) {
   const connection = await pool.getConnection();
   try {
@@ -69,8 +63,6 @@ async function doesPhoneExist(phone) {
     connection.release();
   }
 }
-
-// Fonction pour obtenir tous les clients
 async function getCustomers() {
   const connection = await pool.getConnection();
   try {
@@ -82,8 +74,6 @@ async function getCustomers() {
     connection.release();
   }
 }
-
-// Fonction pour obtenir un client par ID
 async function getCustomerById(id) {
   const connection = await pool.getConnection();
   try {
@@ -101,30 +91,21 @@ async function getCustomerById(id) {
     connection.release();
   }
 }
-
-// Fonction pour ajouter un client
 async function addCustomer(name, email, phone, address) {
   const connection = await pool.getConnection();
   try {
-    // Vérifie que tous les champs sont remplis
     if (!name || !email || !phone || !address) {
       throw new Error("Tous les champs doivent être remplis.");
     }
-
-    // Valide les données du client
     validateCustomerData(name, email, phone);
-
-    // Vérifie si l'email ou le téléphone existent déjà
     const emailExists = await doesEmailExist(email);
     if (emailExists) {
       throw new Error("Cet email existe déjà.");
     }
-
     const phoneExists = await doesPhoneExist(phone);
     if (phoneExists) {
       throw new Error("Ce numéro de téléphone existe déjà.");
     }
-
     const query =
       "INSERT INTO Customers (name, email, phone, address) VALUES (?, ?, ?, ?)";
     const [result] = await connection.execute(query, [
@@ -140,17 +121,12 @@ async function addCustomer(name, email, phone, address) {
     connection.release();
   }
 }
-
-// Fonction pour mettre à jour un client
 async function updateCustomer(id, name, email, phone, address) {
   const connection = await pool.getConnection();
   try {
-    // Vérifie que tous les champs sont remplis
     if (!name || !email || !phone || !address) {
       throw new Error("Tous les champs doivent être remplis.");
     }
-
-    // Vérifie si le client existe
     const [existingCustomer] = await connection.execute(
       "SELECT * FROM Customers WHERE id = ?",
       [id]
@@ -158,22 +134,15 @@ async function updateCustomer(id, name, email, phone, address) {
     if (existingCustomer.length === 0) {
       throw new Error("Le client n'existe pas.");
     }
-
-    // Valide les données du client
     validateCustomerData(name, email, phone);
-
-    // Vérifie si l'email ou le téléphone sont modifiés et existent déjà
     const emailExists = await doesEmailExist(email);
     if (emailExists && email !== existingCustomer[0].email) {
       throw new Error("Cet email existe déjà.");
     }
-
     const phoneExists = await doesPhoneExist(phone);
     if (phoneExists && phone !== existingCustomer[0].phone) {
       throw new Error("Ce numéro de téléphone existe déjà.");
     }
-
-    // Mise à jour du client
     const query =
       "UPDATE Customers SET name = ?, email = ?, phone = ?, address = ? WHERE id = ?";
     const [result] = await connection.execute(query, [
@@ -190,12 +159,9 @@ async function updateCustomer(id, name, email, phone, address) {
     connection.release();
   }
 }
-
-// Fonction pour supprimer un client
 async function deleteCustomer(id) {
   const connection = await pool.getConnection();
   try {
-    // Vérifie si le client existe
     const [existingCustomer] = await connection.execute(
       "SELECT * FROM Customers WHERE id = ?",
       [id]
@@ -203,8 +169,6 @@ async function deleteCustomer(id) {
     if (existingCustomer.length === 0) {
       throw new Error("Le client avec l'ID spécifié n'existe pas.");
     }
-
-    // Vérifie si le client est référencé dans des commandes
     const [referencedCustomer] = await connection.execute(
       "SELECT * FROM purchase_orders WHERE customer_id = ?",
       [id]

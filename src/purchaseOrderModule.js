@@ -138,10 +138,7 @@ async function updatePurchaseOrder(id, updates) {
       throw new Error("L'adresse de livraison doit contenir uniquement du texte.");
     }
 
-    // if (!Number.isInteger(track_number) || track_number <= 0) {
-    //   throw new Error("");
-    // }
-
+   
     if (typeof status !== 'string') {
       throw new Error("Le statut doit contenir uniquement du texte.");
     }
