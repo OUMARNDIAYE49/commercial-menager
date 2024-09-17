@@ -8,8 +8,7 @@ const pool = mysql.createPool({
   database: 'commercial_manager',
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0,
-  port: 3308
+  queueLimit: 0
 });
 
 
