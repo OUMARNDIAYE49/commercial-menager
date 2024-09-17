@@ -24,7 +24,7 @@ Le projet de Gestion des vente en ligne pour ABC Corporation vise à améliorer 
 3. **Configurez la base de données :**
 
     - Assurez-vous que Mysql est en cours d'exécution sur votre machine locale.
-    - Mettez les paramètres de connexion dans `config/db.js`.
+    - Mettez les paramètres de connexion dans `src/config/db.js`.
   
 ## Utilisation
 
