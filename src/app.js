@@ -47,6 +47,7 @@ const mainMenu = () => {
   });
 };
 
+
 function askQuestion(query) {
   return new Promise(resolve => rl.question(query, resolve));
 }
@@ -84,7 +85,7 @@ async function customerMenu() {
         break;
       case "6":
         console.log(""); 
-        mainMenu();
+        mainMenu(); // Assurez-vous que la fonction mainMenu() est définie ailleurs
         break;
       default:
         console.log("Option invalide, veuillez réessayer.");
@@ -106,6 +107,12 @@ async function addCustomerFlow() {
   let address = await promptValidInput("Adresse : ", validateAddress);
 
   try {
+    if (await customerModule.doesEmailExist(email)) {
+      throw new Error("Cet email existe déjà.");
+    }
+    if (await customerModule.doesPhoneExist(phone)) {
+      throw new Error("Ce numéro de téléphone existe déjà.");
+    }
     await customerModule.addCustomer(name, email, phone, address);
     console.log("Client ajouté avec succès.");
   } catch (error) {
@@ -124,6 +131,16 @@ async function updateCustomerFlow() {
   let address = await promptValidInput("Adresse : ", validateAddress);
 
   try {
+    const existingCustomer = await customerModule.getCustomerById(id);
+    if (!existingCustomer) {
+      throw new Error("Le client n'existe pas.");
+    }
+    if (await customerModule.doesEmailExist(email) && email !== existingCustomer.email) {
+      throw new Error("Cet email existe déjà.");
+    }
+    if (await customerModule.doesPhoneExist(phone) && phone !== existingCustomer.phone) {
+      throw new Error("Ce numéro de téléphone existe déjà.");
+    }
     await customerModule.updateCustomer(id, name, email, phone, address);
     console.log("Client mis à jour avec succès.");
   } catch (error) {
@@ -161,6 +178,7 @@ async function viewCustomerFlow() {
   console.log("");
   customerMenu();
 }
+
 async function promptValidInput(promptText, validateFunc) {
   let input;
   while (true) {
@@ -173,29 +191,37 @@ async function promptValidInput(promptText, validateFunc) {
     }
   }
 }
+
 function validateName(name) {
-  const nameRegex = /^[A-Za-z\s]+$/;
-  if (!nameRegex.test(name)) {
-    throw new Error("Le nom est invalide.");
+  // Acceptation de tous les caractères jusqu'à 255 caractères
+  if (name.length === 0 || name.length > 255) {
+    throw new Error("Le nom doit contenir entre 1 et 255 caractères.");
   }
 }
+
 function validateEmail(email) {
-  const emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
+  const emailRegex = /^.+@.+\..+$/
   if (!emailRegex.test(email)) {
     throw new Error("L'email est invalide.");
   }
 }
+
 function validatePhone(phone) {
-  const phoneRegex = /^[0-9]{1,20}$/;
-  if (!phoneRegex.test(phone)) {
-    throw new Error("Le format du téléphone est invalide.");
+  // Accepte tous les caractères jusqu'à 20 caractères
+  if (phone.length === 0 || phone.length > 20) {
+    throw new Error("Le numéro de téléphone doit contenir entre 1 et 20 caractères.");
   }
 }
+
 function validateAddress(address) {
   if (!address) {
     throw new Error("L'adresse ne peut pas être vide.");
   }
 }
+
+
+
+
 
 const paymentMenu = () => {
   console.log("\n=== Menu Paiements ===");
@@ -257,12 +283,12 @@ const handleAddPayment = async () => {
     const existingOrder = await paymentModule.checkOrderExists(order_id); 
     if (!existingOrder) {
       console.error("La commande avec l'ID spécifié n'existe pas.");
-      return handleAddPayment(); 
+      return AddPayment(); 
     }
     await paymentModule.addPayment(order_id, date, amount, payment_method);
     console.log("Paiement ajouté avec succès.");
   } catch (error) {
-    console.error("Erreur lors de l'ajout du paiement : " + error.message);
+    console.error("");
   }
   paymentMenu();
 };
@@ -281,11 +307,7 @@ const handleUpdatePayment = async () => {
       console.error("Le paiement avec cet ID n'existe pas.");
       return handleUpdatePayment(); 
     }
-    const existingOrder = await paymentModule.checkOrderExists(order_id); 
-    if (!existingOrder) {
-      console.error("La commande avec l'ID spécifié n'existe pas.");
-      return handleUpdatePayment();
-    }
+   
     await paymentModule.updatePayment(id, order_id, date, amount, payment_method);
     console.log("Paiement mis à jour avec succès.");
   } catch (error) {
@@ -338,7 +360,6 @@ const promptForValidInput = (question, regex, errorMessage) => {
   });
 };
 
-// Fonction pour afficher le menu des produits
 async function productMenu() {
   console.log("\n=== Menu Produits ===");
   console.log("1. Voir tous les produits");
@@ -349,51 +370,54 @@ async function productMenu() {
   console.log("6. Retour au menu principal");
 
   rl.question("Choisissez une option : ", async (option) => {
-  try {
-    switch (option) {
-      case "1":
-        const products = await productModule.getProducts();
-        console.table(products);
-        productMenu();
-        break;
-      case "2":
-        await addProductFlow();
-        break;
-      case "3":
-        await updateProductFlow();
-        break;
-      case "4":
-        await deleteProductFlow();
-        break;
-      case "5":
-        await viewProductFlow();
-        break;
+    try {
+      switch (option) {
+        case "1":
+          const products = await productModule.getProducts();
+          console.table(products);
+          productMenu();
+          break;
+        case "2":
+          await addProductFlow();
+          break;
+        case "3":
+          await updateProductFlow();
+          break;
+        case "4":
+          await deleteProductFlow();
+          break;
+        case "5":
+          await viewProductFlow();
+          break;
         case "6":
           console.log(""); 
           mainMenu(); 
           break;
-      default:
-        console.log("Option invalide, veuillez réessayer.");
-        console.log("");
-        productMenu();
-        break;
+        default:
+          console.log("Option invalide, veuillez réessayer.");
+          console.log("");
+          productMenu();
+          break;
+      }
+    } catch (error) {
+      console.error("Erreur:", error.message);
+      console.log("");
+      productMenu();
     }
-  } catch (error) {
-    console.error("Erreur:", error.message);
-    console.log("");
-    productMenu();
-  }
-});
-};
+  });
+}
+
 async function addProductFlow() {
-    const name = await promptValidInput("Nom : ", validateProductName);
-    const description = await promptValidInput("Description : ", validateProductDescription);
-    const price = await promptValidInput("Prix : ", validateProductPrice);
-    const stock = await promptValidInput("Stock : ", validateProductStock);
-    const category = await promptValidInput("Catégorie : ", validateProductCategory);
-    const barcode = await promptValidInput("Code-barres : ", validateProductBarcode);
-    const status = await promptValidInput("Statut : ", validateProductStatus);
-    try { await productModule.addProduct(name, description, price, stock, category, barcode, status);
+  const name = await promptValidInput("Nom : ", validateProductName);
+  const description = await promptValidInput("Description : ", validateProductDescription);
+  const price = await promptValidInput("Prix : ", validateProductPrice);
+  const stock = await promptValidInput("Stock : ", validateProductStock);
+  const category = await promptValidInput("Catégorie : ", validateProductCategory);
+  const barcode = await promptValidInput("Code-barres : ", validateProductBarcode);
+  const status = await promptValidInput("Statut : ", validateProductStatus);
+  
+  try {
+    await productModule.addProduct(name, description, price, stock, category, barcode, status);
     console.log("Produit ajouté avec succès.");
   } catch (error) {
     console.error("Erreur lors de l'ajout du produit :", error.message);
@@ -414,80 +438,99 @@ async function updateProductFlow() {
   const status = await promptValidInput("Statut : ", validateProductStatus);
 
   try {
-      await productModule.updateProduct(id, name, description, price, stock, category, barcode, status);
-      console.log("Produit mis à jour avec succès.");
+    await productModule.updateProduct(id, name, description, price, stock, category, barcode, status);
+    console.log("Produit mis à jour avec succès.");
   } catch (error) {
-      console.error("Erreur lors de la mise à jour du produit :", error.message);
+    console.error("Erreur lors de la mise à jour du produit :", error.message);
   }
   console.log(""); 
   await productMenu();
 }
+
 async function deleteProductFlow() {
   try {
     const id = await askQuestion("ID du produit à supprimer : ");
     const { message } = await productModule.deleteProduct(id);
     console.log(message);
   } catch (error) {
-
-    console.error("");
+    console.error("Erreur lors de la suppression du produit :", error.message);
   }
   console.log(""); 
   productMenu();
 }
+
 async function viewProductFlow() {
   try {
     const id = await askQuestion("ID du produit à voir : ");
     const product = await productModule.getProductById(id);
     console.table([product]);
   } catch (error) {
-    console.error("");
+    console.error("Erreur lors de la récupération du produit :", error.message);
   }
   productMenu();
 }
+
+function askQuestion(question) {
+  return new Promise((resolve) => {
+    rl.question(question, (answer) => resolve(answer));
+  });
+}
+
+async function promptValidInput(prompt, validator) {
+  while (true) {
+    const input = await askQuestion(prompt);
+    try {
+      validator(input);
+      return input;
+    } catch (error) {
+      console.error(error.message);
+    }
+  }
+}
+
 function validateProductName(name) {
-  if (!/^[A-Za-z\s]+$/.test(name)) {
-    throw new Error("Le nom du produit est invalide.");
+  if (!/^.{1,255}$/.test(name)) {
+    throw new Error("Le nom du produit est invalide. Il doit contenir entre 1 et 255 caractères.");
   }
 }
 
 function validateProductDescription(description) {
-  if (!/^[A-Za-z\s]+$/.test(description))  {
-    throw new Error("La description du produit est type text.");
+  if (description.length === 0) {
+    throw new Error("La description du produit est invalide. Elle ne peut pas être vide.");
   }
 }
 
 function validateProductPrice(price) {
-  if (!/^[\d]+(\.\d{1,2})?$/.test(price)) {
-    throw new Error("Le prix du produit est invalide.");
+  if (!/^[0-9]+(\.[0-9]{1,2})?$/.test(price) || parseFloat(price) < 0 || parseFloat(price) > 99999999.99) {
+    throw new Error("Le prix du produit est invalide. Il doit être un nombre décimal valide avec jusqu'à 2 décimales.");
   }
 }
 
 function validateProductStock(stock) {
   if (!/^[0-9]+$/.test(stock)) {
-    throw new Error("Le stock du produit doit être un nombre entier.");
+    throw new Error("Le stock du produit est invalide. Il doit être un nombre entier.");
   }
 }
 
 function validateProductCategory(category) {
-  if (!/^[A-Za-z\s]+$/.test(category)) {
-    throw new Error("Le format invalide.");
+  if (!/^.{1,100}$/.test(category)) {
+    throw new Error("La catégorie du produit est invalide. Elle doit contenir entre 1 et 100 caractères.");
   }
 }
 
 function validateProductBarcode(barcode) {
-  if (!/^[0-9]+$/.test(barcode)) {
-    throw new Error("Le code-barres du produit doit être un nombre.");
+  if (!/^.{1,50}$/.test(barcode)) {
+    throw new Error("Le code-barres du produit est invalide. Il doit contenir entre 1 et 50 caractères.");
   }
 }
 
 function validateProductStatus(status) {
-  const validStatuses = ['Disponible', 'Indisponible'];
-  if (!validStatuses.includes(status)) {
-    throw new Error("Le statut du produit est invalide. Choisissez 'Disponible' ou 'Indisponible'.");
+  // Vérifie que le statut est une chaîne de caractères et qu'il ne dépasse pas 50 caractères
+  if (typeof status !== 'string' || status.length > 50) {
+    throw new Error("Le statut du produit est invalide. Il doit être une chaîne de caractères ne dépassant pas 50 caractères.");
   }
-  console.log("Produit ajouté avec succès.");
-  productMenu();
 }
+
 
 
 let tempOrderDetails = [];
@@ -538,7 +581,7 @@ const orderMenu = () => {
 const voirCommandes = async () => {
   try {
     const orders = await orderModule.getPurchaseOrders();
-    
+
     if (!orders || orders.length === 0) {
       console.log("Aucune commande disponible à afficher.");
       orderMenu();
@@ -576,7 +619,7 @@ const voirCommandeParId = async () => {
   rl.question("Entrez l'ID de la commande : ", async (id) => {
     try {
       const order = await orderModule.getPurchaseOrderById(id);
-      
+
       if (!order) {
         console.log("Aucune commande trouvée avec cet ID.");
         orderMenu();
@@ -697,6 +740,11 @@ const enregistrerCommande = async () => {
   }
 };
 
+// Fonction pour valider si une valeur est un entier positif
+const isPositiveInteger = (value) => {
+  const number = Number(value);
+  return Number.isInteger(number) && number > 0;
+};
 
 const miseAJourCommande = () => {
   rl.question("ID de la commande à mettre à jour : ", async (id) => {
@@ -725,234 +773,207 @@ const miseAJourCommande = () => {
         console.log("  ---");
       });
 
-   
-      const demanderNouvelleDate = (callback) => {
-        rl.question("\nNouvelle date (YYYY-MM-DD) ou laissez vide pour conserver : ", (newDate) => {
-          if (newDate && !isValidDate(newDate)) {
-            console.log("Format de date invalide. Veuillez saisir une date valide (YYYY-MM-DD).");
-            demanderNouvelleDate(callback);
-          } else {
-            callback(newDate);
-          }
-        });
-      };
-
-      const demanderNouvelleAdresse = (callback) => {
-        rl.question("Nouvelle adresse de livraison ou laissez vide pour conserver : ", (newDeliveryAddress) => {
-          if (newDeliveryAddress && typeof newDeliveryAddress !== "string") {
-            console.log("L'adresse de livraison doit contenir uniquement du texte.");
-            demanderNouvelleAdresse(callback); 
-          } else {
-            callback(newDeliveryAddress);
-          }
-        });
-      };
-
-     
-      const demanderNouveauNumeroSuivi = (callback) => {
-        rl.question("Nouveau numéro de suivi ou laissez vide pour conserver : ", (newTrackNumber) => {
-          if (newTrackNumber && (!Number.isInteger(parseInt(newTrackNumber)) || parseInt(newTrackNumber) <= 0)) {
-            console.log("Le numéro de suivi doit être un nombre entier positif.");
-            demanderNouveauNumeroSuivi(callback);
-          } else {
-            callback(newTrackNumber);
-          }
-        });
-      };
-
-      const demanderNouveauStatut = (callback) => {
-        rl.question("Nouveau statut ou laissez vide pour conserver : ", (newStatus) => {
-          if (newStatus && typeof newStatus !== "string") {
-            console.log("Le statut doit contenir uniquement du texte.");
-            demanderNouveauStatut(callback); 
-          } else {
-            callback(newStatus);
-          }
-        });
-      };
-
-      const demanderNouvelIDClient = (callback) => {
-        rl.question("Nouvel ID de client ou laissez vide pour conserver : ", (newCustomerId) => {
-          if (newCustomerId && !/^[0-9]+$/.test(newCustomerId)) {
-            console.log("L'ID du client doit être un chiffre.");
-            demanderNouvelIDClient(callback); 
-          } else {
-            callback(newCustomerId);
-          }
-        });
-      };
-
-      demanderNouvelleDate((newDate) => {
-        demanderNouvelleAdresse((newDeliveryAddress) => {
-          demanderNouveauNumeroSuivi((newTrackNumber) => {
-            demanderNouveauStatut((newStatus) => {
-              demanderNouvelIDClient(async (newCustomerId) => {
-                console.log("\n=== Mise à jour des détails des produits ===");
-                let updatedDetails = [...order.details];
-
-                const modifierDetails = (index = 0) => {
-                  if (index >= updatedDetails.length) {
-                    terminerMiseAJour({
-                      id: order.id,
-                      date: newDate || order.date,
-                      delivery_address: newDeliveryAddress || order.delivery_address,
-                      track_number: newTrackNumber || order.track_number,
-                      status: newStatus || order.status,
-                      customer_id: newCustomerId || order.customer_id,
-                      details: updatedDetails
-                    });
-                    return;
-                  }
-
-                  const detail = updatedDetails[index];
-                  console.log(`\nModification du produit ${index + 1}`);
-                  rl.question(`Nouvel ID du produit (actuel: ${detail.product_id}) ou laissez vide pour conserver : `, (newProductId) => {
-                    rl.question(`Nouvelle quantité (actuelle: ${detail.quantity}) ou laissez vide pour conserver : `, (newQuantity) => {
-                      if (newQuantity && (!Number.isInteger(parseInt(newQuantity)) || parseInt(newQuantity) <= 0)) {
-                        console.log("La quantité doit être un nombre entier positif.");
-                        modifierDetails(index); 
-                        return;
-                      }
-                      rl.question(`Nouveau prix (actuel: ${detail.price}) ou laissez vide pour conserver : `, (newPrice) => {
-                        if (newPrice && (!/^\d+(\.\d{1,2})?$/.test(newPrice) || parseFloat(newPrice) <= 0)) {
-                          console.log("Le prix doit être un nombre décimal positif avec deux chiffres après la virgule.");
-                          modifierDetails(index); 
-                          return;
-                        }
-                        updatedDetails[index] = {
-                          product_id: newProductId || detail.product_id,
-                          quantity: newQuantity || detail.quantity,
-                          price: newPrice || detail.price
-                        };
-                        modifierDetails(index + 1);
-                      });
-                    });
-                  });
-                };
-
-                const terminerMiseAJour = async (updatedOrder) => {
-                  try {
-                    await orderModule.updatePurchaseOrder(id, updatedOrder);
-                    console.log("Commande mise à jour avec succès.");
-                  } catch (error) {
-                    console.error("Erreur lors de la mise à jour de la commande :", error.message);
-                  }
-                  orderMenu();
-                };
-
-                modifierDetails();
-              });
+      const demandeSaisieValidée = (question, validationFunction) => {
+        return new Promise((resolve) => {
+          const poserQuestion = () => {
+            rl.question(question, (input) => {
+              if (validationFunction(input)) {
+                resolve(input);
+              } else {
+                console.log("Saisie invalide. Veuillez réessayer.");
+                poserQuestion();
+              }
             });
-          });
+          };
+          poserQuestion();
         });
-      });
+      };
+
+      const miseAJour = async () => {
+        const newDate = await demandeSaisieValidée("Nouvelle date (format AAAA-MM-JJ) : ", isValidDate);
+        const newDeliveryAddress = await demandeSaisieValidée("Nouvelle adresse de livraison : ", (input) => input.length > 0);
+        const newTrackNumber = await demandeSaisieValidée("Nouveau numéro de suivi : ", (input) => input.length > 0 && input.length <= 100);
+        const newStatus = await demandeSaisieValidée("Nouveau statut : ", (input) => input.length > 0 && input.length <= 50);
+        const newCustomerId = await demandeSaisieValidée("Nouvel ID de client : ", (input) => !isNaN(input) && input > 0);
+
+        const newDetails = [];
+        for (let i = 0; i < order.details.length; i++) {
+          console.log(`\nMise à jour du produit ${i + 1} :`);
+
+          const newProductId = await demandeSaisieValidée(
+            `Nouvel ID produit pour le produit ${i + 1} (actuel: ${order.details[i].product_id}) : `,
+            (input) => !isNaN(input) && input > 0
+          );
+          const newQuantity = await demandeSaisieValidée(
+            `Nouvelle quantité pour le produit ${i + 1} (actuel: ${order.details[i].quantity}) : `,
+            isPositiveInteger // Validation de la quantité
+          );
+          const newPrice = await demandeSaisieValidée(
+            `Nouveau prix pour le produit ${i + 1} (actuel: ${order.details[i].price}) : `,
+            (input) => !isNaN(input) && input > 0
+          );
+
+          newDetails.push({
+            product_id: Number(newProductId),
+            quantity: Number(newQuantity), // Assurez-vous que c'est un nombre
+            price: Number(newPrice)
+          });
+        }
+
+        const updatedOrder = {
+          date: newDate,
+          delivery_address: newDeliveryAddress,
+          track_number: newTrackNumber,
+          status: newStatus,
+          customer_id: newCustomerId,
+          details: newDetails
+        };
+
+        enregistrerCommandeMiseAJour(id, updatedOrder);
+      };
+
+      miseAJour();
 
     } catch (error) {
-      console.error("Erreur lors de la récupération de la commande :", error.message);
+      console.error("Erreur lors de la mise à jour de la commande :", error.message);
       orderMenu();
     }
   });
 };
+
+const enregistrerCommandeMiseAJour = async (id, updatedOrder) => {
+  try {
+    await orderModule.updatePurchaseOrder(id, updatedOrder);
+    console.log("Commande mise à jour avec succès.");
+    orderMenu();
+  } catch (error) {
+    console.error("Erreur lors de la mise à jour de la commande :", error.message);
+    orderMenu();
+  }
+};
+
+
 
 const supprimerCommande = () => {
-  rl.question("Entrez l'ID de la commande à supprimer : ", async (id) => {
+  rl.question("ID de la commande à supprimer : ", async (id) => {
     try {
-      await orderModule.deletePurchaseOrder(id);
-      console.log("Commande supprimée avec succès.");
-      orderMenu();
+      const order = await orderModule.getPurchaseOrderById(id);
+
+      if (!order) {
+        console.log("Aucune commande trouvée avec cet ID.");
+        orderMenu();
+        return;
+      }
+
+      rl.question(`Êtes-vous sûr de vouloir supprimer la commande ID ${id}? (oui/non) : `, async (confirmation) => {
+        if (confirmation.toLowerCase() === "oui") {
+          await orderModule.deletePurchaseOrder(id);
+          console.log("Commande supprimée avec succès.");
+        } else {
+          console.log("Suppression annulée.");
+        }
+        orderMenu();
+      });
     } catch (error) {
-      console.error("Erreur lors de la suppression de la commande :", error.message);
+      console.error( error.message);
       orderMenu();
     }
   });
 };
+
 const isValidDate = (dateString) => {
   const regex = /^\d{4}-\d{2}-\d{2}$/;
-  if (!regex.test(dateString)) return false;
-  const [year, month, day] = dateString.split('-').map(Number);
-  const date = new Date(year, month - 1, day);
-  return date.getFullYear() === year && date.getMonth() + 1 === month && date.getDate() === day;
+  if (!dateString.match(regex)) return false;
+
+  const date = new Date(dateString);
+  const timestamp = date.getTime();
+
+  return !isNaN(timestamp) && date.toISOString().startsWith(dateString);
 };
+
+// Fonctions pour demander des entrées utilisateur
 const askForDate = (callback) => {
   rl.question("Date (YYYY-MM-DD) : ", (date) => {
-    if (!date || !isValidDate(date)) {
-      console.error("Erreur : Le format de la date est invalide.");
+    if (isValidDate(date)) {
+      callback(date);
+    } else {
+      console.log("Format de date invalide. Veuillez saisir une date valide (YYYY-MM-DD).");
       askForDate(callback);
-      return;
     }
-    callback(date);
   });
 };
+
 const askForDeliveryAddress = (callback) => {
-  rl.question("Adresse de livraison : ", (delivery_address) => {
-    if (!delivery_address || typeof delivery_address !== "string") {
-      console.error("Erreur : L'adresse de livraison est invalide ou vide.");
+  rl.question("Adresse de livraison : ", (address) => {
+    if (typeof address === "string") {
+      callback(address);
+    } else {
+      console.log("L'adresse de livraison doit contenir uniquement du texte.");
       askForDeliveryAddress(callback);
-      return;
     }
-    callback(delivery_address);
   });
 };
+
 const askForTrackNumber = (callback) => {
-  rl.question("Numéro de suivi : ", (track_number) => {
-    const parsedTrackNumber = parseInt(track_number, 10);
-    if (isNaN(parsedTrackNumber) || parsedTrackNumber <= 0) {
-      console.error("Erreur : Le numéro de suivi doit être un nombre entier positif.");
-      askForTrackNumber(callback);  
-      return;
+  rl.question("Numéro de suivi : ", (trackNumber) => {
+    if (trackNumber.length <= 100) {
+      callback(trackNumber);
+    } else {
+      console.log("Le numéro de suivi doit être une chaîne de caractères de moins de 100 caractères.");
+      askForTrackNumber(callback);
     }
-    callback(parsedTrackNumber);  
   });
 };
+
 const askForStatus = (callback) => {
   rl.question("Statut : ", (status) => {
-    if (!status || typeof status !== "string") {
-      console.error("Erreur : Le statut doit contenir du texte.");
+    if (status.length <= 50) {
+      callback(status);
+    } else {
+      console.log("Le statut doit être une chaîne de caractères de moins de 50 caractères.");
       askForStatus(callback);
-      return;
     }
-    callback(status);
   });
 };
+
 const askForCustomerId = (callback) => {
-  rl.question("ID du client : ", (customer_id) => {
-    if (!customer_id || isNaN(customer_id) || parseInt(customer_id) <= 0) {
-      console.error("Erreur : L'ID du client doit être un entier positif.");
+  rl.question("ID du client : ", (customerId) => {
+    if (!isNaN(customerId)) {
+      callback(customerId);
+    } else {
+      console.log("L'ID client doit être un nombre.");
       askForCustomerId(callback);
-      return;
     }
-    callback(customer_id);
   });
 };
+
 const askForProductId = (callback) => {
-  rl.question("ID du produit : ", (product_id) => {
-    if (!product_id || isNaN(product_id) || parseInt(product_id) <= 0) {
-      console.error("Erreur : L'ID du produit doit être un entier positif.");
-      askForProductId(callback);
-      return;
-    }
-    callback(product_id);
+  rl.question("ID du produit : ", (productId) => {
+    callback(productId);
   });
 };
+
 const askForQuantity = (callback) => {
   rl.question("Quantité : ", (quantity) => {
     const parsedQuantity = parseInt(quantity, 10);
-    if (isNaN(parsedQuantity) || parsedQuantity <= 0) {
-      console.error("Erreur : La quantité doit être un nombre entier positif.");
-      askForQuantity(callback);  
-      return;
+    if (!isNaN(parsedQuantity) && parsedQuantity > 0) {
+      callback(parsedQuantity);
+    } else {
+      console.log("La quantité doit être un entier positif.");
+      askForQuantity(callback);
     }
-    callback(parsedQuantity);  
   });
 };
+
 const askForPrice = (callback) => {
   rl.question("Prix : ", (price) => {
-    if (!price || isNaN(price) || parseFloat(price) <= 0) {
-      console.error("Erreur : Le prix doit être un nombre positif.");
+    const parsedPrice = parseFloat(price);
+    if (!isNaN(parsedPrice) && parsedPrice >= 0 && price.match(/^\d+(\.\d{1,2})?$/)) {
+      callback(parsedPrice);
+    } else {
+      console.log("Le prix doit être un nombre décimal avec jusqu'à 2 chiffres après la virgule.");
       askForPrice(callback);
-      return;
     }
-    callback(price);
   });
 };
 

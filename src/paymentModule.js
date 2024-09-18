@@ -17,7 +17,7 @@ function validatePaymentData(order_id, date, amount, payment_method) {
 async function getPayments() {
   const connection = await pool.getConnection();
   try {
-    const [rows] = await connection.execute("SELECT * FROM Payments");
+    const [rows] = await connection.execute("SELECT * FROM payments");
     return rows;
   } catch (error) {
     console.error("Erreur lors de la récupération des paiements :", error.message);
@@ -29,7 +29,7 @@ async function getPayments() {
 async function getPaymentById(id) {
   const connection = await pool.getConnection();
   try {
-    const [rows] = await connection.execute("SELECT * FROM Payments WHERE id = ?", [id]);
+    const [rows] = await connection.execute("SELECT * FROM payments WHERE id = ?", [id]);
     if (rows.length === 0) {
       throw new Error("Le paiement n'existe pas.");
     }
@@ -89,13 +89,13 @@ async function updatePayment(id, order_id, date, amount, payment_method) {
 async function deletePayment(id) {
   const connection = await pool.getConnection();
   try {
-    const [existingPayment] = await connection.execute("SELECT * FROM Payments WHERE id = ?", [id]);
+    const [existingPayment] = await connection.execute("SELECT * FROM payments WHERE id = ?", [id]);
 
     if (existingPayment.length === 0) {
       throw new Error("Le paiement n'existe pas.");
     }
 
-    const query = "DELETE FROM Payments WHERE id = ?";
+    const query = "DELETE FROM payments WHERE id = ?";
     const [result] = await connection.execute(query, [id]);
     return result;
   } catch (error) {

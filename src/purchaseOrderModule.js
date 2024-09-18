@@ -1,14 +1,57 @@
 const pool = require("./config/db");
 
+// Fonction de validation de la date
 function isValidDate(dateString) {
   const date = new Date(dateString);
   return !isNaN(date.getTime());
 }
 
+function validateDate(date) {
+  if (!date || !isValidDate(date)) {
+    throw new Error("Format de date invalide. Veuillez saisir une date valide.");
+  }
+}
+
+// Fonction de validation de l'adresse de livraison
+function validateDeliveryAddress(address) {
+  if (!address || typeof address !== "string") {
+    throw new Error("L'adresse de livraison doit contenir uniquement du texte.");
+  }
+}
+
+// Fonction de validation du numéro de suivi
+function validateTrackNumber(trackNumber) {
+  if (!trackNumber || typeof trackNumber !== "string" || trackNumber.length > 100) {
+    throw new Error("Le numéro de suivi doit être une chaîne de caractères de 100 caractères maximum.");
+  }
+}
+
+// Fonction de validation du statut
+function validateStatus(status) {
+  if (!status || typeof status !== "string" || status.length > 50) {
+    throw new Error("Le statut doit être une chaîne de caractères de 50 caractères maximum.");
+  }
+}
+
+// Fonction de validation de la quantité
+function validateQuantity(quantity) {
+  if (!Number.isInteger(quantity) || quantity <= 0) {
+    throw new Error("La quantité doit être un nombre entier positif.");
+  }
+}
+
+// Fonction de validation du prix
+function validatePrice(price) {
+  if (!/^\d+(\.\d{1,2})?$/.test(price) || price <= 0) {
+    throw new Error("Le prix doit être un nombre décimal positif avec deux chiffres après la virgule.");
+  }
+}
+
+// Fonction pour récupérer toutes les commandes d'achat
 async function getPurchaseOrders() {
   const connection = await pool.getConnection();
   try {
-    const [orders] = await connection.execute("SELECT * FROM purchase_Orders");
+    const [orders] = await connection.execute("SELECT * FROM purchase_orders");
 
     if (!orders || orders.length === 0) {
       console.error("Aucune commande trouvée.");
@@ -33,42 +76,30 @@ async function getPurchaseOrders() {
 
     return orders;
   } catch (error) {
-    console.error(
-      "Erreur lors de la récupération des commandes :",
-      error.message
-    );
-    throw new Error(
-      `Erreur lors de la récupération des commandes : ${error.message}`
-    );
+    console.error("Erreur lors de la récupération des commandes :", error.message);
+    throw new Error(`Erreur lors de la récupération des commandes : ${error.message}`);
   } finally {
     connection.release();
   }
 }
 
+// Fonction pour ajouter une commande d'achat
 async function addPurchaseOrder(order) {
   const { date, delivery_address, track_number, status, customer_id, details } = order;
 
-  if (!date) {
-    throw new Error("Le champ date est obligatoire.");
-  }
-  if (!isValidDate(date)) {
-    throw new Error("Format de date invalide. Veuillez saisir une date valide.");
-  }
-  if (!delivery_address || typeof delivery_address !== "string") {
-    throw new Error("L'adresse de livraison doit contenir uniquement du texte.");
-  }
-  if (!track_number || !Number.isInteger(track_number) || track_number <= 0) {
-    throw new Error("Le numéro de suivi doit être un nombre entier positif.");
-  }
-  if (!status || typeof status !== "string") {
-    throw new Error("Le statut doit contenir uniquement du texte.");
-  }
+  validateDate(date);
+  validateDeliveryAddress(delivery_address);
+  validateTrackNumber(track_number);
+  validateStatus(status);
+
   if (!customer_id) {
     throw new Error("L'ID du client est obligatoire.");
   }
+
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
+
     const [existingCustomer] = await connection.execute(
       "SELECT * FROM Customers WHERE id = ?",
       [customer_id]
@@ -76,14 +107,19 @@ async function addPurchaseOrder(order) {
     if (existingCustomer.length === 0) {
       throw new Error("Le client avec cet ID n'existe pas.");
     }
+
     const [result] = await connection.execute(
       "INSERT INTO purchase_orders (date, delivery_address, track_number, status, customer_id) VALUES (?, ?, ?, ?, ?)",
       [date, delivery_address, track_number, status, customer_id]
     );
     const orderId = result.insertId;
+
     if (details && details.length > 0) {
       for (const detail of details) {
         const { product_id, quantity, price } = detail;
+
+        validateQuantity(quantity);
+        validatePrice(price);
 
         const [existingProduct] = await connection.execute(
           "SELECT * FROM Products WHERE id = ?",
@@ -91,14 +127,6 @@ async function addPurchaseOrder(order) {
         );
         if (existingProduct.length === 0) {
           throw new Error("Le produit avec cet ID n'existe pas.");
-        }
-
-        if (!Number.isInteger(quantity) || quantity <= 0) {
-          throw new Error("La quantité doit être un nombre entier positif.");
-        }
-
-        if (!/^\d+(\.\d{1,2})?$/.test(price) || price <= 0) {
-          throw new Error("Le prix doit être un nombre décimal positif avec deux chiffres après la virgule.");
         }
 
         await connection.execute(
@@ -121,6 +149,8 @@ async function addPurchaseOrder(order) {
     connection.release();
   }
 }
+
+// Fonction pour mettre à jour une commande d'achat
 async function updatePurchaseOrder(id, updates) {
   const connection = await pool.getConnection();
   try {
@@ -130,32 +160,23 @@ async function updatePurchaseOrder(id, updates) {
 
     const { date, delivery_address, track_number, status, customer_id, details } = updates;
 
-    if (date && !isValidDate(date)) {
-      throw new Error("Format de date invalide.");
-    }
-
-    if (typeof delivery_address !== 'string') {
-      throw new Error("L'adresse de livraison doit contenir uniquement du texte.");
-    }
-
-   
-    if (typeof status !== 'string') {
-      throw new Error("Le statut doit contenir uniquement du texte.");
-    }
-
-    if (!customer_id) {
+    if (date) validateDate(date);
+    if (delivery_address) validateDeliveryAddress(delivery_address);
+    if (track_number) validateTrackNumber(track_number);
+    if (status) validateStatus(status);
+    if (customer_id === undefined) {
       throw new Error("L'ID du client est obligatoire et ne peut pas être null.");
     }
 
     const query =
-      "UPDATE purchase_Orders SET date = ?, delivery_address = ?, track_number = ?, status = ?, customer_id = ? WHERE id = ?";
+      "UPDATE purchase_orders SET date = ?, delivery_address = ?, track_number = ?, status = ?, customer_id = ? WHERE id = ?";
 
     const [result] = await connection.execute(query, [
       date || null,
       delivery_address || null,
       track_number || null,
       status || null,
-      customer_id,  
+      customer_id,
       id,
     ]);
 
@@ -169,13 +190,8 @@ async function updatePurchaseOrder(id, updates) {
       for (const detail of details) {
         const { product_id, quantity, price } = detail;
 
-        if (!Number.isInteger(quantity) || quantity <= 0) {
-          throw new Error("La quantité doit être un nombre entier positif.");
-        }
-
-        if (!/^\d+(\.\d{1,2})?$/.test(price) || price <= 0) {
-          throw new Error("Le prix doit être un nombre décimal positif avec deux chiffres après la virgule.");
-        }
+        validateQuantity(quantity);
+        validatePrice(price);
 
         await connection.execute(
           "INSERT INTO order_details (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)",
@@ -186,15 +202,13 @@ async function updatePurchaseOrder(id, updates) {
 
     return result;
   } catch (error) {
-    throw new Error(
-      `Erreur lors de la mise à jour de la commande : ${error.message}`
-    );
+    throw new Error(`Erreur lors de la mise à jour de la commande : ${error.message}`);
   } finally {
     connection.release();
   }
 }
 
-
+// Fonction pour supprimer une commande d'achat
 async function deletePurchaseOrder(id) {
   const connection = await pool.getConnection();
   try {
@@ -202,12 +216,10 @@ async function deletePurchaseOrder(id) {
       throw new Error("L'ID de la commande doit être un chiffre.");
     }
 
-    await connection.execute("DELETE FROM order_details WHERE order_id = ?", [
-      id,
-    ]);
+    await connection.execute("DELETE FROM order_details WHERE order_id = ?", [id]);
 
     const [result] = await connection.execute(
-      "DELETE FROM purchase_Orders WHERE id = ?",
+      "DELETE FROM purchase_orders WHERE id = ?",
       [id]
     );
 
@@ -217,12 +229,15 @@ async function deletePurchaseOrder(id) {
 
     return result;
   } catch (error) {
-    throw new Error("Commande non trouvée");
+    throw new ("Impossible de supprimer la commande. Une erreur est survenue.");
+    // console.log("Impossible de supprimer la commande. Une erreur est survenue")
+
   } finally {
     connection.release();
   }
 }
 
+// Fonction pour récupérer une commande d'achat par ID
 async function getPurchaseOrderById(id) {
   const connection = await pool.getConnection();
   try {
@@ -230,7 +245,7 @@ async function getPurchaseOrderById(id) {
       throw new Error("L'ID de la commande doit être un chiffre.");
     }
     const [orderRows] = await connection.execute(
-      "SELECT * FROM purchase_Orders WHERE id = ?",
+      "SELECT * FROM purchase_orders WHERE id = ?",
       [id]
     );
 
@@ -249,7 +264,7 @@ async function getPurchaseOrderById(id) {
 
     return order;
   } catch (error) {
-    throw new Error("Commande non trouvée.");
+    throw new Error("Erreur lors de la récupération de la commande : " + error.message);
   } finally {
     connection.release();
   }
