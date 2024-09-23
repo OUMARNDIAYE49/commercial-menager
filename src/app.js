@@ -19,7 +19,6 @@ const mainMenu = () => {
   console.log("4. Gérer les commandes");
   console.log("5. Quitter");
 
-  
   rl.question("Choisissez une option : ", (option) => {
     switch (option) {
       case "1":
@@ -46,7 +45,6 @@ const mainMenu = () => {
     
   });
 };
-
 
 function askQuestion(query) {
   return new Promise(resolve => rl.question(query, resolve));
@@ -85,7 +83,7 @@ async function customerMenu() {
         break;
       case "6":
         console.log(""); 
-        mainMenu(); // Assurez-vous que la fonction mainMenu() est définie ailleurs
+        mainMenu(); 
         break;
       default:
         console.log("Option invalide, veuillez réessayer.");
@@ -193,7 +191,6 @@ async function promptValidInput(promptText, validateFunc) {
 }
 
 function validateName(name) {
-  // Acceptation de tous les caractères jusqu'à 255 caractères
   if (name.length === 0 || name.length > 255) {
     throw new Error("Le nom doit contenir entre 1 et 255 caractères.");
   }
@@ -207,7 +204,6 @@ function validateEmail(email) {
 }
 
 function validatePhone(phone) {
-  // Accepte tous les caractères jusqu'à 20 caractères
   if (phone.length === 0 || phone.length > 20) {
     throw new Error("Le numéro de téléphone doit contenir entre 1 et 20 caractères.");
   }
@@ -218,10 +214,6 @@ function validateAddress(address) {
     throw new Error("L'adresse ne peut pas être vide.");
   }
 }
-
-
-
-
 
 const paymentMenu = () => {
   console.log("\n=== Menu Paiements ===");
@@ -525,13 +517,10 @@ function validateProductBarcode(barcode) {
 }
 
 function validateProductStatus(status) {
-  // Vérifie que le statut est une chaîne de caractères et qu'il ne dépasse pas 50 caractères
   if (typeof status !== 'string' || status.length > 50) {
     throw new Error("Le statut du produit est invalide. Il doit être une chaîne de caractères ne dépassant pas 50 caractères.");
   }
 }
-
-
 
 let tempOrderDetails = [];
 let newOrder = null;
@@ -740,7 +729,6 @@ const enregistrerCommande = async () => {
   }
 };
 
-// Fonction pour valider si une valeur est un entier positif
 const isPositiveInteger = (value) => {
   const number = Number(value);
   return Number.isInteger(number) && number > 0;
@@ -806,7 +794,7 @@ const miseAJourCommande = () => {
           );
           const newQuantity = await demandeSaisieValidée(
             `Nouvelle quantité pour le produit ${i + 1} (actuel: ${order.details[i].quantity}) : `,
-            isPositiveInteger // Validation de la quantité
+            isPositiveInteger 
           );
           const newPrice = await demandeSaisieValidée(
             `Nouveau prix pour le produit ${i + 1} (actuel: ${order.details[i].price}) : `,
@@ -815,7 +803,7 @@ const miseAJourCommande = () => {
 
           newDetails.push({
             product_id: Number(newProductId),
-            quantity: Number(newQuantity), // Assurez-vous que c'est un nombre
+            quantity: Number(newQuantity), 
             price: Number(newPrice)
           });
         }
@@ -865,21 +853,17 @@ const supprimerCommande = () => {
         return;
       }
 
-      rl.question(`Êtes-vous sûr de vouloir supprimer la commande ID ${id}? (oui/non) : `, async (confirmation) => {
-        if (confirmation.toLowerCase() === "oui") {
-          await orderModule.deletePurchaseOrder(id);
-          console.log("Commande supprimée avec succès.");
-        } else {
-          console.log("Suppression annulée.");
-        }
-        orderMenu();
-      });
+      await orderModule.deletePurchaseOrder(id);
+      console.log(`La commande avec l'ID ${id} a été supprimée avec succès.`);
+      orderMenu();
     } catch (error) {
-      console.error( error.message);
+      console.error(error.message);
       orderMenu();
     }
   });
 };
+
+
 
 const isValidDate = (dateString) => {
   const regex = /^\d{4}-\d{2}-\d{2}$/;
